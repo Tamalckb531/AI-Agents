@@ -1,7 +1,23 @@
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import dotenv from "dotenv";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 dotenv.config();
+
+const weatherTool = tool(
+    async ({ query }) => {
+        console.log('query', query);
+
+        return 'The weather in Tokyo is sunny';
+    }, {
+    name: "weather",
+    description: "Get the weather in a given location",
+    schema: z.object({
+        query: z.string().describe("The query to use in search")
+    })
+}
+);
 
 
 const model = new ChatGoogleGenerativeAI({
@@ -11,13 +27,13 @@ const model = new ChatGoogleGenerativeAI({
 
 const agent = createReactAgent({
     llm: model,
-    tools: [],
+    tools: [weatherTool],
 })
 
 const result = await agent.invoke({
     messages: [{
         role: "user",
-        content: "Hello, how can you help me ?"
+        content: "What is the weather in Chittagong?"
     }]
 })
 
