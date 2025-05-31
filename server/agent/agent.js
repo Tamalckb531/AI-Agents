@@ -29,34 +29,10 @@ const model = new ChatGoogleGenerativeAI({
 //? it gives the previous asked question context to the llm
 const checkpointSaver = new MemorySaver();
 
-const agent = createReactAgent({
+export const agent = createReactAgent({
     llm: model,
     tools: [weatherTool],
     checkpointSaver,
 });
 
-//? All agent invoke should have same id in configurable for having the context
-const result = await agent.invoke({
-    messages: [{
-        role: "user",
-        content: "What is the weather in Chittagong?"
-    }]
-},
-    {
-        configurable: { thread_id: 1 }
-    }
-)
 
-const followup = await agent.invoke({
-    messages: [{
-        role: "user",
-        content: "What city is that for?"
-    }]
-},
-    {
-        configurable: { thread_id: 1 }
-    }
-)
-
-console.log(result.messages.at(-1)?.content);
-console.log(followup.messages.at(-1)?.content);
