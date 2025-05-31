@@ -16,14 +16,15 @@ app.get('/', (req, res) => {
 });
 
 app.post('/generate', async (req, res) => {
+    const { prompt, thread_id } = req.body;
     const result = await agent.invoke({
         messages: [{
             role: 'user',
-            content: 'Whats the weather in Chittagong ?'
+            content: prompt
         }],
     },
         {
-            configurable: { thread_id: 42 },
+            configurable: { thread_id },
         });
 
     res.json(result.messages.at(-1)?.content);
