@@ -1,6 +1,19 @@
 import { tool } from '@langchain/core'
 import { z } from 'zod';
+import dotenv from "dotenv";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { MessagesAnnotation, StateGraph } from '@langchain/langgraph'
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
+dotenv.config();
+
+//! Creating llm model for ai interaction
+const llm = new ChatGoogleGenerativeAI({
+    apiKey: process.env.AI_API_KEY,
+    model: "gemini-1.5-flash",
+});
+
+//! created tools with lang chain -> our llm gonna use that stuffs
 const multiply = tool(async(({ a, b }) => {
     return a * b;
 }), {
@@ -45,3 +58,7 @@ const divide = tool(async(({ a, b }) => {
     }),
 }
 );
+
+const tools = [add, multiply, subtract, divide];
+const toolsByName = Object.fromEntries(tool.map((tool) => [tool.name, tool]));
+const llmWithTools = llm.bindTools(tools); //? This is where we give the tools context to the llm
