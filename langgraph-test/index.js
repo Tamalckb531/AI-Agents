@@ -139,7 +139,7 @@ const agentBuilder = new StateGraph(MessagesAnnotation)
 const messages = [
     {
         role: 'user',
-        content: 'Add 3 and 4',
+        content: 'Add 5 and 15 then multiply that by 5 and divide it by 2',
     }
 ];
 
