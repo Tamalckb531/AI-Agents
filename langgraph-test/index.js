@@ -1,7 +1,7 @@
-import { tool } from '@langchain/core'
+import { tool } from '@langchain/core/tools'
+import { ToolMessage } from '@langchain/core/messages'
 import { z } from 'zod';
 import dotenv from "dotenv";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { MessagesAnnotation, StateGraph } from '@langchain/langgraph'
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
@@ -14,58 +14,62 @@ const llm = new ChatGoogleGenerativeAI({
 });
 
 //! created tools with """LangChain""" -> our llm gonna use that stuffs
-const multiply = tool(async(({ a, b }) => {
+const multiply = tool(async ({ a, b }) => {
     return a * b;
-}), {
-    name: "multiply",
-    description: "Multiply two numbers",
-    schema: z.object({
-        a: z.number().describe('first number'),
-        b: z.number().describe('second number'),
-    }),
-}
+},
+    {
+        name: "multiply",
+        description: "Multiply two numbers",
+        schema: z.object({
+            a: z.number().describe('first number'),
+            b: z.number().describe('second number'),
+        }),
+    }
 );
-const add = tool(async(({ a, b }) => {
+const add = tool(async ({ a, b }) => {
     return a + b;
-}), {
-    name: "add",
-    description: "Add two numbers",
-    schema: z.object({
-        a: z.number().describe('first number'),
-        b: z.number().describe('second number'),
-    }),
-}
+},
+    {
+        name: "add",
+        description: "Add two numbers",
+        schema: z.object({
+            a: z.number().describe('first number'),
+            b: z.number().describe('second number'),
+        }),
+    }
 );
-const subtract = tool(async(({ a, b }) => {
+const subtract = tool(async ({ a, b }) => {
     return a > b ? a - b : b - a;
-}), {
-    name: "subtract",
-    description: "Subtract two numbers",
-    schema: z.object({
-        a: z.number().describe('first number'),
-        b: z.number().describe('second number'),
-    }),
-}
+},
+    {
+        name: "subtract",
+        description: "Subtract two numbers",
+        schema: z.object({
+            a: z.number().describe('first number'),
+            b: z.number().describe('second number'),
+        }),
+    }
 );
-const divide = tool(async(({ a, b }) => {
+const divide = tool(async ({ a, b }) => {
     return a / b;
-}), {
-    name: "Divide",
-    description: "Divide two numbers",
-    schema: z.object({
-        a: z.number().describe('first number'),
-        b: z.number().describe('second number'),
-    }),
-}
+},
+    {
+        name: "Divide",
+        description: "Divide two numbers",
+        schema: z.object({
+            a: z.number().describe('first number'),
+            b: z.number().describe('second number'),
+        }),
+    }
 );
 
 const tools = [add, multiply, subtract, divide];
-const toolsByName = Object.fromEntries(tool.map((tool) => [tool.name, tool]));
+const toolsByName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
 const llmWithTools = llm.bindTools(tools); //? This is where we give the tools context to the llm
 
 //! Creating Graph with """LangGraph""" -> It wil have multiple node interconnected with each other -> each node is a process that run the llm with the tools and can also have the memory for previous context
 
-//? This are nodes that performs task by user with tools and llm
+// //? This are nodes that performs task by user with tools and llm
 async function llmCall(state) {
     const result = await llmWithTools.invoke([
         {
@@ -89,7 +93,7 @@ async function toolNode(state) {
             const tool = toolsByName[toolCall.name];
             const observation = await tool.invoke(toolCall.args);
             results.push(
-                new ToolMessages({
+                new ToolMessage({
                     content: observation,
                     tool_call_id: toolCall.id,
                 })
@@ -113,7 +117,7 @@ function shouldContinue(state) {
     return "__end__";
 }
 
-//? Here we creating the graph that connects the nodes we created before with the tools
+// //? Here we creating the graph that connects the nodes we created before with the tools
 const agentBuilder = new StateGraph(MessagesAnnotation)
     .addNode('llmCall', llmCall)
     .addNode('tools', toolNode)
@@ -128,3 +132,17 @@ const agentBuilder = new StateGraph(MessagesAnnotation)
     )
     .addEdge("tools", "llmCall")
     .compile()
+
+
+//! Here we using our AI agent with props data
+
+const messages = [
+    {
+        role: 'user',
+        content: 'Add 3 and 4',
+    }
+];
+
+const result = await agentBuilder.invoke({ messages });
+console.log(result.messages);
+

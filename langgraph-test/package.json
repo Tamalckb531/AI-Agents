@@ -2,6 +2,7 @@
   "name": "langgraph-test",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +13,7 @@
   "dependencies": {
     "@langchain/core": "^0.3.57",
     "@langchain/langgraph": "^0.3.0",
+    "@langchain/google-genai": "^0.2.10",
     "dotenv": "^16.5.0",
     "langsmith": "^0.3.30",
     "zod": "^3.25.51"
