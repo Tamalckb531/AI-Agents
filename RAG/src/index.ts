@@ -1,6 +1,9 @@
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import type { DocumentInterface } from "@langchain/core/documents";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 //! That is the simple documents for the vector store
 const document: DocumentInterface[] = [
@@ -25,3 +28,14 @@ const document: DocumentInterface[] = [
     metadata: { id: "1" },
   },
 ];
+
+//! Creating embeddings form the documents
+const embeddings = new GoogleGenerativeAIEmbeddings({
+  apiKey: process.env.AI_API_KEY,
+  model: "models/embedding-001",
+});
+
+//! Creating a new vector store
+const vectorStore = new MemoryVectorStore(embeddings);
+
+await vectorStore.addDocuments(document);
