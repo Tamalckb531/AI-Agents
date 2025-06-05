@@ -5,7 +5,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-//! That is the simple documents for the vector store
+//! The given code convert documents into embeddings which will be the building block for a Rag application
+
+//? That is the simple documents for the vector store
 const document: DocumentInterface[] = [
   {
     pageContent:
@@ -29,13 +31,13 @@ const document: DocumentInterface[] = [
   },
 ];
 
-//! Creating embeddings form the documents
+//? Creating embeddings form the documents
 const embeddings = new GoogleGenerativeAIEmbeddings({
   apiKey: process.env.AI_API_KEY,
   model: "models/embedding-001",
 });
 
-//! Creating a new vector store
+//? Creating a new vector store
 const vectorStore = new MemoryVectorStore(embeddings);
 
 await vectorStore.addDocuments(document);
