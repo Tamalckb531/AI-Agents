@@ -1,4 +1,7 @@
-import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import {
+  ChatGoogleGenerativeAI,
+  GoogleGenerativeAIEmbeddings,
+} from "@langchain/google-genai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import type { DocumentInterface } from "@langchain/core/documents";
 import dotenv from "dotenv";
@@ -6,6 +9,10 @@ import { Annotation } from "@langchain/langgraph";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { ScoreThresholdRetriever } from "langchain/retrievers/score_threshold";
 import { TavilySearchAPIRetriever } from "@langchain/community/retrievers/tavily_search_api";
+import { pull } from "langchain/hub";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/dist/output_parsers";
+import { formatDocumentsAsString } from "langchain/util/document";
 
 dotenv.config();
 
@@ -111,4 +118,35 @@ async function webSearch(
   return {
     documents: webDocuments,
   };
+}
+
+//! Generation Node -> This will create the main output
+
+async function generate(
+  state: typeof GraphState.State,
+  config?: RunnableConfig
+): Promise<Partial<typeof GraphState.State>> {
+  console.log("---GENERATE---");
+
+  const model = new ChatGoogleGenerativeAI({
+    apiKey: process.env.AI_API_KEY,
+    model: "gemini-1.5-flash",
+    temperature: 0,
+  });
+
+  const prompt = await pull<ChatPromptTemplate>("rlm/rag-prompt"); //? Generate a well written prompt for RAG work
+  const ragChain = prompt.pipe(model).pipe(new StringOutputParser()); //? Feed the prompt to the model and create pipeline to parse the string output from complex ai output
+
+  //? This executes the ragChain for the question with all documents available
+  const generation = await ragChain
+    .withConfig({ runName: "GenerateAnswer" })
+    .invoke(
+      {
+        context: formatDocumentsAsString(state.documents),
+        question: state.question,
+      },
+      config
+    );
+
+  return { generation };
 }
