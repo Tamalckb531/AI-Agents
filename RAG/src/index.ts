@@ -2,6 +2,7 @@ import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import type { DocumentInterface } from "@langchain/core/documents";
 import dotenv from "dotenv";
+import { Annotation } from "@langchain/langgraph";
 
 dotenv.config();
 
@@ -41,3 +42,18 @@ const embeddings = new GoogleGenerativeAIEmbeddings({
 const vectorStore = new MemoryVectorStore(embeddings);
 
 await vectorStore.addDocuments(document);
+
+//! In the given code we are creating our graph
+
+//? Represents the state of our graph
+const GraphState = Annotation.Root({
+  documents: Annotation<DocumentInterface[]>({
+    reducer: (x, y) => (y ? y.concat(x ?? []) : []),
+  }),
+  question: Annotation<string>({
+    reducer: (x, y) => y ?? x ?? "",
+  }),
+  generation: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+  }),
+});
