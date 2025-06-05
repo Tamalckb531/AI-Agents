@@ -13,6 +13,7 @@ import { pull } from "langchain/hub";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/dist/output_parsers";
 import { formatDocumentsAsString } from "langchain/util/document";
+import fs from "fs";
 
 dotenv.config();
 
@@ -172,3 +173,17 @@ workflow.addConditionalEdges(
 
 workflow.addEdge("webSearch", "generate");
 workflow.addEdge("generate", END);
+
+//! Compile and Run the graph:
+const app = workflow.compile();
+
+//? visualize the graph
+const graphPn = await app.getGraphAsync();
+const img = await graphPn.drawMermaidPng();
+const buffer = Buffer.from(await img.arrayBuffer());
+fs.writeFileSync("graph.png", buffer);
+
+//? Invoke the graph
+const question = process.argv[2] ?? "What is Langchain ?";
+const output = await app.invoke({ question });
+console.log(output);
