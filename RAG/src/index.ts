@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { Annotation } from "@langchain/langgraph";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { ScoreThresholdRetriever } from "langchain/retrievers/score_threshold";
+import { TavilySearchAPIRetriever } from "@langchain/community/retrievers/tavily_search_api";
 
 dotenv.config();
 
@@ -87,5 +88,27 @@ async function retrieve(
 
   return {
     documents: relatedDocuments,
+  };
+}
+
+//! Web search Node -> Agent gonna user it if they don't find what they need from retrieve:
+
+async function webSearch(
+  state: typeof GraphState.State,
+  config?: RunnableConfig
+): Promise<Partial<typeof GraphState.State>> {
+  console.log("---Web Search---");
+
+  const retriever = new TavilySearchAPIRetriever({
+    apiKey: process.env.TV_API_KEY,
+    k: 1,
+  });
+
+  const webDocuments = await retriever
+    .withConfig({ runName: "FetchRelevantDocuments" })
+    .invoke(state.question, config);
+
+  return {
+    documents: webDocuments,
   };
 }
