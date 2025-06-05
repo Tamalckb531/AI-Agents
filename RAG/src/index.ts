@@ -3,6 +3,8 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import type { DocumentInterface } from "@langchain/core/documents";
 import dotenv from "dotenv";
 import { Annotation } from "@langchain/langgraph";
+import type { RunnableConfig } from "@langchain/core/runnables";
+import { ScoreThresholdRetriever } from "langchain/retrievers/score_threshold";
 
 dotenv.config();
 
@@ -57,3 +59,33 @@ const GraphState = Annotation.Root({
     reducer: (x, y) => y ?? x,
   }),
 });
+
+//! Retrieval Node:
+
+/**
+ *? Retrieve documents
+ *
+ * @param {typeof GraphState.State} state The current state of the graph.
+ * @param {RunnableConfig | undefined} config The configuration object for tracing.
+ * @returns {Promise<Partial<typeof GraphState.State>>} The new state object.
+ */
+
+async function retrieve(
+  state: typeof GraphState.State,
+  config?: RunnableConfig
+): Promise<Partial<typeof GraphState.State>> {
+  console.log("---RETRIEVE---");
+  const retriever = ScoreThresholdRetriever.fromVectorStore(vectorStore, {
+    minSimilarityScore: 0.3,
+    maxK: 1,
+    kIncrement: 1,
+  });
+
+  const relatedDocuments = await retriever
+    .withConfig({ runName: "FetchRelevantDocuments" })
+    .invoke(state.question, config);
+
+  return {
+    documents: relatedDocuments,
+  };
+}
