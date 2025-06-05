@@ -5,7 +5,7 @@ import {
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import type { DocumentInterface } from "@langchain/core/documents";
 import dotenv from "dotenv";
-import { Annotation } from "@langchain/langgraph";
+import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { ScoreThresholdRetriever } from "langchain/retrievers/score_threshold";
 import { TavilySearchAPIRetriever } from "@langchain/community/retrievers/tavily_search_api";
@@ -150,3 +150,25 @@ async function generate(
 
   return { generation };
 }
+
+//! Graph workflow -> The main ai agentic workflow that gonna run all of the RAG nodes
+
+const workflow = new StateGraph(GraphState)
+  .addNode("retrieve", retrieve)
+  .addNode("webSearch", webSearch)
+  .addNode("generate", generate);
+
+workflow.addEdge(START, "retrieve");
+
+workflow.addConditionalEdges(
+  "retrieve",
+  (state: typeof GraphState.State) =>
+    state.documents.length === 0 ? "webSearch" : "generate",
+  {
+    webSearch: "webSearch",
+    generate: "generate",
+  }
+);
+
+workflow.addEdge("webSearch", "generate");
+workflow.addEdge("generate", END);
